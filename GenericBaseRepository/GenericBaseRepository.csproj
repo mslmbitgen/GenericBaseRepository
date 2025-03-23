@@ -15,7 +15,7 @@
     <PackageProjectUrl>www.muslumbitgen.com</PackageProjectUrl>
     <PackageIcon>mb2.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/mslmbitgen/MB.Result/blob/master/MB.Result/README.md</RepositoryUrl>
+    <RepositoryUrl>https://github.com/mslmbitgen/GenericBaseRepository/blob/master/README.md</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>repository</PackageTags>
     <PackageReleaseNotes>repository pattern nuget package</PackageReleaseNotes>

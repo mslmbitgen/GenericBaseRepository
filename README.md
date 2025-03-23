@@ -1,46 +1,145 @@
-﻿# MB.Result NuGet Package
+﻿# MB.GenericBaseRepository NuGet Package
 
 ## Overview
-The `MB.Result` package is a flexible and robust solution for encapsulating the results of operations in .NET applications. It provides a consistent way to handle both success and failure states, along with relevant data, error messages, and HTTP status codes. This package is perfect for enhancing error handling, improving response consistency, and streamlining API responses.
 
-## Features
-- **Generic Result Type**: Strongly typed to accommodate any data type for success scenarios.
-- **Error Handling**: Supports multiple error messages, ideal for situations requiring detailed feedback.
-- **HTTP Status Code Integration**: Ensures that operation results are aligned with HTTP status codes, making it suitable for API development.
-- **Implicit Conversions**: Simplifies result creation from data or error parameters using implicit conversion operators.
-- **Flexible Constructors**: Multiple constructors to handle different result types (success with data or failure with error messages).
-  
-## Getting Started
+`MB.GenericBaseRepository` is a reusable and customizable **Repository Pattern** implementation for **.NET Core / .NET 6+** applications. It offers a clean and maintainable approach to handle database operations with **Entity Framework Core**. The package includes support for basic CRUD operations, pagination, soft deletes, caching, dynamic queries, and bulk operations.
 
-## Installation
+## Dependency
 
-To integrate `MB.Result` into your project, install it via the NuGet package manager:
+This library is built for **.NET 9.0** and works with **Entity Framework Core**.
 
-```plaintext
-Install-Package MB.Result
-```
-Or through the .NET CLI:
-```plaintext
-dotnet add package MB.Result
+## Install
+
+To integrate `MB.GenericBaseRepository` into your project, install it via the **NuGet package manager**:
+
+```bash
+
+ dotnet add package MB.GenericBaseRepository
+ dotnet add package Microsoft.EntityFrameworkCore
+ dotnet add package EFCore.BulkExtensions
+
 ```
 
-## Usage
-- **For a successful operation**, instantiate a Result object with the desired data:
+## UnitOfWork Implementation
+```CSharp
 
-```csharp
-var successResult = new Result<string>("Operation successful.");
+public class ApplicationDbContext : DbContext, IUnitOfWork
+{
+    public DbSet<YourEntity> YourEntities { get; set; }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        await base.SaveChangesAsync(cancellationToken);
+    }
+}
+
 ```
 
-- **Alternatively**, leverage implicit conversion from data:
-```csharp
-Result<string> result = "Operation successful.";
+## Create Repository
+```CSharp
+public interface IUserRepository : IBaseRepository<User>
+{
+    // Custom methods for UserRepository (optional)
+}
+
+public class UserRepository : BaseRepository<User, ApplicationDbContext>, IUserRepository
+{
+    public UserRepository(ApplicationDbContext context, IMemoryCache cache, ILogger<UserRepository> logger)
+        : base(context, cache, logger)
+    {
+    }
+}
 ```
 
-- **For error**, create a Result object with an HTTP status code and error messages:
+## Use in Services
+```CSharp
 
-```csharp
-var errorResult = new Result<string>(400, new List<string> { "Error 1", "Error 2" });
+public class UserService : IUserService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public UserService(IUserRepository userRepository, IUnitOfWork unitOfWork)
+    {
+        _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task AddAsync(User user, CancellationToken cancellationToken)
+    {
+        await _userRepository.AddAsync(user, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return await _userRepository.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
+    public async Task<IList<User>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        return await _userRepository.GetAll().ToListAsync(cancellationToken);
+    }
+}
+
 ```
 
-## License
-`MS.Result` is licensed under the MIT License. See the LICENSE file in the source repository for full details.
+## Dependency Injection
+```CSharp
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUnitOfWork>(srv => srv.GetRequiredService<ApplicationDbContext>());
+
+```
+
+## Methods
+This library have two services.
+IRepository, IUnitOfWork
+
+```Csharp
+
+    // Basic CRUD Operations:
+
+    Task<TEntity> GetByIdAsync(TEntityId id); // Retrieve a record by its ID.
+    IQueryable<TEntity> GetAll(); // Retrieve all active records.
+    IQueryable<TEntity> Find(Expression<Func<TEntity, bool>> predicate); // Find records based on a specific condition
+    Task<TEntity> AddAsync(TEntity entity); // Add a new record.
+    Task<TEntity> UpdateAsync(TEntity entity); // Update an existing record.
+    Task<TEntity> SoftDeleteAsync(TEntity entity, Guid deletedBy); // Perform a soft delete operation.
+    Task<TEntity> RestoreAsync(TEntity entity); // Restore a soft-deleted record.
+    Task<bool> ExistsAsync(TEntityId id); // Check if a record exists by its ID.
+    Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate); // Check if any record exists that satisfies a given condition.
+
+    // Dynamic Features
+    Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate); // Return the first record or null based on a condition.
+    Task<PagedResult<TEntity>> GetPagedAsync(Expression<Func<TEntity, bool>> predicate, int page, int pageSize); // Retrieve records with pagination support.
+    Task<int> CountAsync(Expression<Func<TEntity, bool>> predicate); // Get the number of records that satisfy a given condition.
+
+    // Sorting, Eager Loading, and Advanced Queries
+    IQueryable<TEntity> GetAll(
+        Expression<Func<TEntity, bool>>? filter = null, // Filter
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, // Sort
+        string? includeProperties = "" // Eager loading
+    );//Retrieve all records with optional filtering, ordering, and eager loading support.
+
+    // Statistical Calculations
+    Task<TProperty> MaxAsync<TProperty>(Expression<Func<TEntity, TProperty>> selector); // Retrieve the maximum value of a given property.
+    Task<TProperty> MinAsync<TProperty>(Expression<Func<TEntity, TProperty>> selector); // Retrieve the minimum value of a given property.
+    Task<decimal> SumAsync(Expression<Func<TEntity, decimal>> selector); //  Retrieve the sum of a given property.
+    Task<decimal> AverageAsync(Expression<Func<TEntity, decimal>> selector); //  Retrieve the average value of a given property.
+
+    // Raw SQL Queries:
+    Task<int> ExecuteSqlRawAsync(string sql, params object[] parameters); // Execute a custom raw SQL query.
+
+    // Caching Support
+    IQueryable<TEntity> GetAllWithCache(
+        Expression<Func<TEntity, bool>>? filter = null,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+        string? includeProperties = ""
+    );  //Retrieve records with caching support for improved performance.
+
+    // Bulk Operations
+    Task<int> BulkInsertAsync(IEnumerable<TEntity> entities); // Insert multiple records at once.
+    Task<int> BulkUpdateAsync(IEnumerable<TEntity> entities); // Update multiple records at once.
+
+```
