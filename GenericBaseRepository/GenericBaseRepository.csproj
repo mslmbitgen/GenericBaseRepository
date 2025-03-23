@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>MB.GenericBaseRepository</PackageId>
+    <Title>Generic BaseRepository Pattern</Title>
+    <Authors>Müslüm Bitgen</Authors>
+    <Company>Müslüm Bitgen</Company>
+    <Product>MB.GenericBaseRepository</Product>
+    <Description>This is a generic repository pattern for .NET</Description>
+    <Copyright>© 2025 Müslüm Bitgen. All rights reserved.</Copyright>
+    <PackageProjectUrl>www.muslumbitgen.com</PackageProjectUrl>
+    <PackageIcon>mb2.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/mslmbitgen/MB.Result/blob/master/MB.Result/README.md</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>repository</PackageTags>
+    <PackageReleaseNotes>repository pattern nuget package</PackageReleaseNotes>
+    <NeutralLanguage>tr-TR</NeutralLanguage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EFCore.BulkExtensions" Version="8.1.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="mb2.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
